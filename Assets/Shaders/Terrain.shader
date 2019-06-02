@@ -1,7 +1,7 @@
 Shader "Custom/Terrain" {
 	Properties {
-		
 		_MainTex ("Terrain", 2DArray) = "white" {}
+		_GridTex ("Grid Texture", 2D) = "white" {}
         _Color ("Color", Color) = (1,1,1,1)
         _MinDepth ("MinDepth", int) = -100
         _MaxDepth ("MaxDepth", int) = 100
@@ -15,8 +15,10 @@ Shader "Custom/Terrain" {
 		CGPROGRAM
 		#pragma surface surf Standard fullforwardshadows vertex:vert
 		#pragma target 3.5
+		#pragma multi_compile _ GRID_ON
 
 		UNITY_DECLARE_TEX2DARRAY(_MainTex);
+		sampler2D _GridTex;
 
 		struct Input {
 			float4 color : COLOR;
@@ -46,7 +48,14 @@ Shader "Custom/Terrain" {
 
 		void surf (Input IN, inout SurfaceOutputStandard o) {
             fixed4 c = GetTerrainColor(IN, 0) + GetTerrainColor(IN, 1) + GetTerrainColor(IN, 2);
-			o.Albedo = c.rgb * _Color * GetDepthValue(IN);
+			fixed4 grid = 1;
+			#if defined(GRID_ON)
+				float2 gridUV = IN.worldPos.xz;
+				gridUV.x *= 1 / (4 * 8.66025404);
+				gridUV.y *= 1 / (2 * 15.0);
+				grid = tex2D(_GridTex, gridUV);
+			#endif
+			o.Albedo = c.rgb * grid * _Color * GetDepthValue(IN);
 			o.Metallic = _Metallic;
 			o.Smoothness = _Glossiness;
 			o.Alpha = c.a;

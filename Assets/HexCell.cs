@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 
 public class HexCell : MonoBehaviour {
 
@@ -16,12 +17,32 @@ public class HexCell : MonoBehaviour {
 	[SerializeField]
 	HexCell[] neighbors;
 
+	public HexCell PathFrom { get; set; }
+
+	public int SearchHeuristic { get; set; }
+
+	public int SearchPriority {
+		get {
+			return distance + SearchHeuristic;
+		}
+	}
+	public HexCell NextWithSamePriority { get; set; }
+
 	public Vector3 Position {
 		get {
 			return transform.localPosition;
 		}
 	}
-// why
+	int distance;
+	public int Distance {
+		get { return distance; }
+		set {
+			distance = value;
+			Text label = uiRect.GetComponent<Text>();
+			label.text = distance == int.MaxValue ? "" : distance.ToString();
+		}
+	}
+	public bool Passable = true;
 	public int Elevation {
 		get {
 			return elevation;
@@ -60,6 +81,13 @@ public class HexCell : MonoBehaviour {
 		return neighbors[(int)direction];
 	}
 
+	public HexDirection GetDirection (HexCell neighbor) {
+		for (int i = 0; i < neighbors.Length; i++) {
+			if(neighbors[i] == neighbor) return (HexDirection)i;
+		}
+		return HexDirection.NE;
+	}
+
 	public HexEdgeType GetEdgeType (HexDirection direction) {
 		HexCell neighbor = GetNeighbor(direction);
 		if (elevation == neighbor.elevation) {
@@ -74,6 +102,21 @@ public class HexCell : MonoBehaviour {
 	public void SetNeighbor (HexDirection direction, HexCell cell) {
 		neighbors[(int)direction] = cell;
 		cell.neighbors[(int)direction.Opposite()] = this;
+	}
+
+	public void DisableHighlight () {
+		Image highlight = uiRect.GetChild(0).GetComponent<Image>();
+		highlight.enabled = false;
+	}
+	
+	public void EnableHighlight () {
+		EnableHighlight(Color.white);
+	}
+
+	public void EnableHighlight (Color color) {
+		Image highlight = uiRect.GetChild(0).GetComponent<Image>();
+		highlight.color = color;
+		highlight.enabled = true;
 	}
 
 	void Refresh () {

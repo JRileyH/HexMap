@@ -1,11 +1,14 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using System.IO;
+using System.Collections;
+using System.Collections.Generic;
 
 public class HexGrid : MonoBehaviour {
 	public float WorldScale = 1f;
 	public int chunkCountX = 1, chunkCountZ = 1;
 	int cellCountX, cellCountZ;
+	HexCellPriorityQueue searchFrontier;
 	public HexGridChunk chunkPrefab;
 	public HexCell cellPrefab;
 	public Text cellLabelPrefab;
@@ -75,7 +78,7 @@ public class HexGrid : MonoBehaviour {
 		// Create Grid Cell Overlay
 		Text label = Instantiate<Text>(cellLabelPrefab);
 		label.rectTransform.anchoredPosition = new Vector2(position.x, position.z);
-		label.text = cell.coordinates.ToStringOnSeparateLines();
+		label.text = "";
 		cell.uiRect = label.rectTransform;
 
 		AddCellToChunk (x, z, cell);
@@ -91,6 +94,77 @@ public class HexGrid : MonoBehaviour {
 		int localX = x - chunkX * HexMetrics.chunkSizeX;
 		int localZ = z - chunkZ * HexMetrics.chunkSizeZ;
 		chunk.AddCell(localX + localZ * HexMetrics.chunkSizeX, cell);
+	}
+
+	public Material terrainMaterial;
+	public void ShowGrid (bool visible) {
+		if (visible) {
+			terrainMaterial.EnableKeyword("GRID_ON");
+		}
+		else {
+			terrainMaterial.DisableKeyword("GRID_ON");
+		}
+	}
+
+	public List<HexCell> FindPath (HexCell fromCell, HexCell toCell) {
+		List<HexCell> list = new List<HexCell>();
+		foreach(HexCell c in Search(fromCell, toCell)) {
+			c.EnableHighlight(Color.green);
+			list.Insert(0, c);
+		}
+		list.Add(toCell);
+		return list;
+	}
+
+	IEnumerable<HexCell> Search (HexCell fromCell, HexCell toCell) {
+		if (searchFrontier == null) {
+			searchFrontier = new HexCellPriorityQueue();
+		}
+		else {
+			searchFrontier.Clear();
+		}
+
+		for (int i = 0; i < cells.Length; i++) {
+			cells[i].Distance = int.MaxValue;
+			cells[i].DisableHighlight();
+		}
+		fromCell.EnableHighlight(Color.blue);
+		toCell.EnableHighlight(Color.red);
+
+		fromCell.Distance = 0;
+		searchFrontier.Enqueue(fromCell);
+		while (searchFrontier.Count > 0) {
+			HexCell current = searchFrontier.Dequeue();
+
+			if (current == toCell) {
+				current = current.PathFrom;
+				while (current != fromCell) {
+					yield return current;
+					current = current.PathFrom;
+				}
+				break;
+			}
+
+			for (HexDirection d = HexDirection.NE; d <= HexDirection.NW; d++) {
+				HexCell neighbor = current.GetNeighbor(d);
+				if (neighbor == null || !neighbor.Passable) {
+					continue;
+				}
+				int weight = Mathf.Max(neighbor.Elevation - current.Elevation, 0) + 1;
+				int distance = current.Distance + weight;
+				if (neighbor.Distance == int.MaxValue) {
+					neighbor.Distance = distance;
+					neighbor.PathFrom = current;
+					neighbor.SearchHeuristic = neighbor.coordinates.DistanceTo(toCell.coordinates);
+					searchFrontier.Enqueue(neighbor);
+				} else if (distance < neighbor.Distance) {
+					int oldPriority = neighbor.SearchPriority;
+					neighbor.Distance = distance;
+					neighbor.PathFrom = current;
+					searchFrontier.Change(neighbor, oldPriority);
+				}
+			}
+		}
 	}
 
 	public HexCell GetCell(Vector3 position) {
@@ -110,13 +184,14 @@ public class HexGrid : MonoBehaviour {
 	}
 
 	void Awake() {
+
 		chunkCountX = (int)(chunkCountX * WorldScale);
 		chunkCountZ = (int)(chunkCountZ * WorldScale);
 
 		cellCountX = chunkCountX * HexMetrics.chunkSizeX;
 		cellCountZ = chunkCountZ * HexMetrics.chunkSizeZ;
 
-		Texture2D mapNoise = HexMetrics.Noise(seed: 100f, scale: WorldScale, width: cellCountX, height: cellCountZ, ascale: WorldScale * 0.9f);
+		Texture2D mapNoise = HexMetrics.Noise(seed: 199f, scale: WorldScale, width: cellCountX, height: cellCountZ, ascale: WorldScale * 0.9f);
 
 		CreateChunks ();
 		CreateCells (mapNoise);

@@ -16,6 +16,13 @@ public struct HexCoordinates {
 		this.z = z;
 	}
 
+	public int DistanceTo (HexCoordinates other) {
+		return
+			((x < other.x ? other.x - x : x - other.x) +
+			(Y < other.Y ? other.Y - Y : Y - other.Y) +
+			(z < other.z ? other.z - z : z - other.z)) / 2;
+	}
+
 	public static HexCoordinates FromPosition (Vector3 position) {
 		float x = position.x / (HexMetrics.innerRadius * 2f);
 		float y = -x;
