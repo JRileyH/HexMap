@@ -427,9 +427,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1dc06a2bb4b134799b90f07715d4712b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  WorldScale: 1
-  chunkCountX: 5
-  chunkCountZ: 4
+  WorldScale: 6
+  chunkCountX: 1
+  chunkCountZ: 1
   chunkPrefab: {fileID: 114848011608206304, guid: f535a578482974c1297cddae516ac539,
     type: 2}
   cellPrefab: {fileID: 114076387340704448, guid: f0a4666ce67c246bda38950482ab802e,

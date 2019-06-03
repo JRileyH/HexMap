@@ -191,7 +191,7 @@ public class HexGrid : MonoBehaviour {
 		cellCountX = chunkCountX * HexMetrics.chunkSizeX;
 		cellCountZ = chunkCountZ * HexMetrics.chunkSizeZ;
 
-		Texture2D mapNoise = HexMetrics.Noise(seed: 199f, scale: WorldScale, width: cellCountX, height: cellCountZ, ascale: WorldScale * 0.9f);
+		Texture2D mapNoise = HexMetrics.Noise(seed: 19f, scale: WorldScale, width: cellCountX, height: cellCountZ, ascale: WorldScale * 0.9f);
 
 		CreateChunks ();
 		CreateCells (mapNoise);
